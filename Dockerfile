@@ -1,41 +1,39 @@
-# Use an official PHP runtime as a parent image
-FROM php:8.1-fpm
+# Use the official PHP 8.0 image with Apache
+FROM php:8.0-apache
 
-# Set working directory
-WORKDIR /var/www
-
-# Install system dependencies
+# Install system dependencies and PHP extensions needed by Laravel
 RUN apt-get update && apt-get install -y \
-    build-essential \
     libpng-dev \
-    libjpeg62-turbo-dev \
+    libjpeg-dev \
     libfreetype6-dev \
-    locales \
-    zip \
-    jpegoptim optipng pngquant gifsicle \
-    vim \
-    unzip \
+    libxml2-dev \
+    libzip-dev \
+    libicu-dev \
     git \
-    curl
+    unzip \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd pdo_mysql mbstring exif bcmath zip intl
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Enable Apache mod_rewrite for Laravel routing
+RUN a2enmod rewrite
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Set the working directory in the container
+WORKDIR /var/www/html
+
+# Copy the Laravel app into the container
+COPY . /var/www/html
+
+# Set the correct permissions for Laravel (adjust according to your needs)
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy the existing application directory contents
-COPY . /var/www
+# Install PHP dependencies using Composer
+RUN composer install --no-dev --optimize-autoloader
 
-# Copy the existing application directory permissions
-RUN chown -R www-data:www-data /var/www
+# Expose the port Apache is listening on
+EXPOSE 80
 
-# Change current user to www
-USER www-data
-
-# Expose port 8000 and start the server
-EXPOSE 8000
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Start Apache service
+CMD ["apache2-foreground"]
