@@ -1,40 +1,20 @@
-# Use the official PHP 8.0 image with Apache
-FROM php:8.0-apache
+FROM richarvey/nginx-php-fpm:3.1.6
 
-# Install system dependencies and PHP extensions needed by Laravel
-RUN apt-get update && apt-get install -y \
-    libonig-dev \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libxml2-dev \
-    libzip-dev \
-    libicu-dev \
-    git \
-    unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo_mysql mbstring exif bcmath zip intl
+COPY . .
 
-# Enable Apache mod_rewrite for Laravel routing
-RUN a2enmod rewrite
+# Image config
+ENV SKIP_COMPOSER 1
+ENV WEBROOT /var/www/html/public
+ENV PHP_ERRORS_STDERR 1
+ENV RUN_SCRIPTS 1
+ENV REAL_IP_HEADER 1
 
-# Set the working directory in the container
-WORKDIR /var/www/html
+# Laravel config
+ENV APP_ENV production
+ENV APP_DEBUG false
+ENV LOG_CHANNEL stderr
 
-# Copy the Laravel app into the container
-COPY . /var/www/html
+# Allow composer to run as root
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# Set the correct permissions for Laravel (adjust according to your needs)
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Install PHP dependencies using Composer
-RUN composer install --no-dev --optimize-autoloader
-
-# Expose the port Apache is listening on
-EXPOSE 80
-
-# Start Apache service
-CMD ["apache2-foreground"]
+CMD ["/start.sh"]
