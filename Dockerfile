@@ -3,6 +3,7 @@ FROM php:8.0-apache
 
 # Install system dependencies and PHP extensions needed by Laravel
 RUN apt-get update && apt-get install -y \
+    libonig-dev \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
