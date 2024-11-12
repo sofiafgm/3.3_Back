@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'OPTIONS'],
 
-    'allowed_origins' => ['https://three-3-front.onrender.com'],
+    'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
 
